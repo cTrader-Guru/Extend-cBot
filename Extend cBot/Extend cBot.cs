@@ -25,7 +25,7 @@ namespace cAlgo
 {
 
     /// <summary>
-    /// <para><b>cTrader Guru | Extensios | v.1.0.0 | 21.04.2022</b></para>
+    /// <para><b>cTrader Guru | Extensios</b></para>
     /// <para>A group of generic extensions that make the developer's life easier</para>
     /// </summary>
     public static class Extensions
@@ -225,7 +225,7 @@ namespace cAlgo
         public static double LastGAP(this Bars thisBars, int thisDigits = 5)
         {
 
-            return Math.Round( Math.Abs(thisBars.ClosePrices.Last(1) - thisBars.OpenPrices.Last(0)), thisDigits);
+            return Math.Round(Math.Abs(thisBars.ClosePrices.Last(1) - thisBars.OpenPrices.Last(0)), thisDigits);
 
         }
 
@@ -501,11 +501,12 @@ namespace cAlgo
 
         /// <param name="Culture">Localization of double value</param>
         /// <returns>double : Time representation in double format (example : "10:34:07" = 10,34)</returns>
-        public static double ToDouble(this string thisString, string Culture = "en-EN") {
+        public static double ToDouble(this string thisString, string Culture = "en-EN")
+        {
 
 
             var culture = CultureInfo.GetCultureInfo(Culture);
-            return double.Parse(thisString.Replace(',','.').ToString(CultureInfo.InvariantCulture), culture);
+            return double.Parse(thisString.Replace(',', '.').ToString(CultureInfo.InvariantCulture), culture);
 
         }
 
@@ -524,8 +525,59 @@ namespace cAlgo.Robots
     public class ExtendcBot : Robot
     {
 
-        [Parameter("Label", Group = "Identity", DefaultValue = "Extend cBot")]
+        #region Identity
+
+        public const string NAME = "Extend cBot";
+
+        public const string VERSION = "1.0.0";
+
+        #endregion
+
+        #region Params
+
+        #region Identity
+
+        [Parameter(NAME + " " + VERSION, Group = "Identity", DefaultValue = "https://ctrader.guru/")]
+        public string ProductInfo { get; set; }
+
+        [Parameter("Label ( Magic Name )", Group = "Identity", DefaultValue = NAME)]
         public string MyLabel { get; set; }
+
+        [Parameter("Preset information", Group = "Identity", DefaultValue = "Standard preset without any strategy")]
+        public string PresetInfo { get; set; }
+
+        #endregion
+
+        #region Pausa
+
+        [Parameter("From", Group = "Pause", DefaultValue = 18.00, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        public double PauseFrom { get; set; }
+
+        [Parameter("To", Group = "Pause", DefaultValue = 9.00, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        public double PauseTo { get; set; }
+
+        public bool IAmInPause
+        {
+
+            get
+            {
+
+                if (PauseFrom == 0 && PauseTo == 0) return false;
+
+                double now = Server.Time.ToDouble();
+
+                bool intraday = (PauseFrom < PauseTo && now >= PauseFrom && now <= PauseTo);
+                bool overnight = (PauseFrom > PauseTo && ((now >= PauseFrom && now <= 23.59) || now <= PauseTo));
+
+                return intraday || overnight;
+
+            }
+
+        }
+
+        #endregion
+
+        #region BreakEven
 
         [Parameter("Activation (zero = disabled)", Group = "Break Even", DefaultValue = 5, MinValue = 0, Step = 0.1)]
         public double BreakEvenActivation { get; set; }
@@ -533,15 +585,29 @@ namespace cAlgo.Robots
         [Parameter("Distance", Group = "Break Even", DefaultValue = 1.1, MinValue = 0, Step = 0.1)]
         public double BreakEvenDistance { get; set; }
 
+        #endregion
+
+        #region Trailing
+
         [Parameter("Activation (zero = disabled)", Group = "Trailing", DefaultValue = 10, MinValue = 0, Step = 0.1)]
         public double TrailingActivation { get; set; }
 
         [Parameter("Distance", Group = "Trailing", DefaultValue = 10, MinValue = 1, Step = 0.1)]
         public double TrailingDistance { get; set; }
 
+        #endregion
+
+        #endregion
+
+        #region Property
+
+        #endregion
+
+        #region cBot Events
         protected override void OnStart()
         {
 
+            Print(IAmInPause);
             double volumeInUnits = Symbol.QuantityToVolumeInUnits(0.01);
 
             // -->ExecuteMarketRangeOrder(TradeType.Buy, Symbol.Name, volumeInUnits, 2, Symbol.Ask, MyLabel, 0, 0);
@@ -610,6 +676,12 @@ namespace cAlgo.Robots
 
 
         }
+
+        #endregion
+
+        #region Methods
+
+        #endregion
 
     }
 
