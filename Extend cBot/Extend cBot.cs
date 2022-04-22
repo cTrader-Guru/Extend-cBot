@@ -15,8 +15,11 @@
 
 
 using System;
+using System.Linq;
 using cAlgo.API;
+using cAlgo.API.Indicators;
 using cAlgo.API.Internals;
+using cAlgo.Indicators;
 using System.Globalization;
 
 
@@ -180,6 +183,17 @@ namespace cAlgo
             WhiteSmoke,
             Yellow,
             YellowGreen
+
+        }
+
+        /// <summary>
+        /// List of capital for Money Management
+        /// </summary>
+        public enum CapitalTo
+        {
+
+            Balance,
+            Equity
 
         }
 
@@ -512,6 +526,137 @@ namespace cAlgo
 
         #endregion
 
+        #region Class
+
+
+        public class MonenyManagement
+        {
+
+            private readonly double _minSize = 0.01;
+            private double _percentage = 0;
+            private double _fixedSize = 0;
+            private double _pipToCalc = 30;
+
+            // --> Riferimenti agli oggetti esterni utili per il calcolo
+            private IAccount _account = null;
+            public readonly Symbol Symbol;
+
+            /// <summary>
+            /// Il capitale da utilizzare per il calcolo
+            /// </summary>
+            public CapitalTo CapitalType = CapitalTo.Balance;
+
+            /// <summary>
+            /// La percentuale di rischio che si vuole investire
+            /// </summary>
+            public double Percentage
+            {
+
+                get { return _percentage; }
+
+
+                set { _percentage = (value > 0 && value <= 100) ? value : 0; }
+            }
+
+            /// <summary>
+            /// La size fissa da utilizzare, bypassa tutti i parametri di calcolo
+            /// </summary>
+            public double FixedSize
+            {
+
+                get { return _fixedSize; }
+
+
+
+                set { _fixedSize = (value >= _minSize) ? value : 0; }
+            }
+
+
+            /// <summary>
+            /// La distanza massima dall'ingresso con il quale calcolare le size
+            /// </summary>
+            public double PipToCalc
+            {
+
+                get { return _pipToCalc; }
+
+                set { _pipToCalc = (value > 0) ? value : 100; }
+            }
+
+
+            /// <summary>
+            /// Il capitale effettivo sul quale calcolare il rischio
+            /// </summary>
+            public double Capital
+            {
+
+                get
+                {
+
+                    switch (CapitalType)
+                    {
+
+                        case CapitalTo.Equity:
+
+                            return _account.Equity;
+                        default:
+
+
+                            return _account.Balance;
+
+                    }
+
+                }
+            }
+
+
+
+            // --> Costruttore
+            public MonenyManagement(IAccount NewAccount, CapitalTo NewCapitalTo, double NewPercentage, double NewFixedSize, double NewPipToCalc, Symbol NewSymbol)
+            {
+
+                _account = NewAccount;
+
+                Symbol = NewSymbol;
+
+                CapitalType = NewCapitalTo;
+                Percentage = NewPercentage;
+                FixedSize = NewFixedSize;
+                PipToCalc = NewPipToCalc;
+
+            }
+
+            /// <summary>
+            /// Restituisce il numero di lotti in formato 0.01
+            /// </summary>
+            public double GetLotSize()
+            {
+
+                // --> Hodeciso di usare una size fissa
+                if (FixedSize > 0)
+                    return FixedSize;
+
+                // --> La percentuale di rischio in denaro
+                double moneyrisk = Capital / 100 * Percentage;
+
+                // --> Traduco lo stoploss o il suo riferimento in double
+                double sl_double = PipToCalc * Symbol.PipSize;
+
+                // --> In formato 0.01 = microlotto double lots = Math.Round(Symbol.VolumeInUnitsToQuantity(moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
+                // --> In formato volume 1K = 1000 Math.Round((moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
+                double lots = Math.Round(Symbol.VolumeInUnitsToQuantity(moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
+
+                if (lots < _minSize)
+                    return _minSize;
+
+                return lots;
+
+            }
+
+        }
+
+        #endregion
+
     }
 
 }
@@ -521,15 +666,93 @@ namespace cAlgo
 namespace cAlgo.Robots
 {
 
+    public class Strategy : Robot
+    {
+
+        public ExponentialMovingAverage FastEMA;
+        public ExponentialMovingAverage SlowEMA;
+
+        public bool TriggerBuy
+        {
+            get
+            {
+
+                return FastEMA.Result.Last(2) <= SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1);
+
+            }
+
+        }
+
+        public bool TriggerSell
+        {
+            get
+            {
+
+                return FastEMA.Result.Last(2) >= SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
+
+            }
+
+        }
+
+        public bool FilterBuy
+        {
+
+            get
+            {
+
+                return true;
+
+            }
+
+        }
+
+        public bool FilterSell
+        {
+
+            get
+            {
+
+                return true;
+
+            }
+
+        }
+
+        public bool Buy
+        {
+
+            get
+            {
+
+                return FilterBuy && TriggerBuy;
+
+            }
+
+        }
+
+        public bool Sell
+        {
+
+            get
+            {
+
+                return FilterSell && TriggerSell;
+
+            }
+
+        }
+
+    }
+
     [Robot(TimeZone = TimeZones.UTC, AccessRights = AccessRights.None)]
-    public class ExtendcBot : Robot
+    public class ExtendcBot : Strategy
     {
 
         #region Identity
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.1";
+        public const string VERSION = "1.0.2";
 
         #endregion
 
@@ -587,13 +810,64 @@ namespace cAlgo.Robots
 
         public double TakeProfit
         {
-            get {
+            get
+            {
 
                 return Math.Round(StopLoss * TakeProfitRR, 1);
-            
+
             }
-        
+
         }
+
+        [Parameter("Close On Trigger?", Group = "Strategy", DefaultValue = true)]
+        public bool CloseOnTrigger { get; set; }
+
+        [Parameter("Money Target (%, zero disabled)", Group = "Strategy", DefaultValue = 0, MinValue = 0, Step = 0.1)]
+        public double MoneyTargetPercentage { get; set; }
+        public double MoneyTarget
+        {
+
+            get { 
+            
+                return Math.Round( (Account.Balance / 100 ) * MoneyTargetPercentage, 2);
+
+            }
+
+        }
+        
+        [Parameter("Money Target Minimum Trades", Group = "Strategy", DefaultValue = 1, MinValue = 1, Step = 1)]
+        public int MoneyTargetTrades { get; set; }
+
+        [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
+        public double SpreadToTrigger { get; set; }
+
+        [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 1, MinValue = 0, Step = 0.01)]
+        public double GAP { get; set; }
+
+        [Parameter("Max Number of Trades", Group = "Filters", DefaultValue = 1, MinValue = 1, Step = 1)]
+        public int MaxTrades { get; set; }
+
+        [Parameter("Fast", Group = "EMA", DefaultValue = 5, MinValue = 1)]
+        public int PeriodFastEMA { get; set; }
+
+        [Parameter("Slow", Group = "EMA", DefaultValue = 9, MinValue = 2)]
+        public int PeriodSlowEMA { get; set; }
+
+        #endregion
+
+        #region Money Management
+
+        [Parameter("Fixed Lots (bypass all Capital)", Group = "Money Management", DefaultValue = 0, MinValue = 0, Step = 0.01)]
+        public double FixedLots { get; set; }
+
+        [Parameter("Capital", Group = "Money Management", DefaultValue = Extensions.CapitalTo.Balance)]
+        public Extensions.CapitalTo MyCapital { get; set; }
+
+        [Parameter("% Risk", Group = "Money Management", DefaultValue = 1, MinValue = 0.1, Step = 0.1)]
+        public double MyRisk { get; set; }
+
+        [Parameter("Pips To Calculate ( if no stoploss, empty = '100' )", Group = "Money Management", DefaultValue = 100, MinValue = 0, Step = 0.1)]
+        public double FakeSL { get; set; }
 
         #endregion
 
@@ -621,17 +895,79 @@ namespace cAlgo.Robots
 
         #region Property
 
+        public bool OpenedInThisBar = false;
+
+        public double StrategyNetProfit = 0;
+
+        public Position[] StrategyPositions = {};
+
+        Extensions.MonenyManagement MonenyManagement1;
+
         #endregion
 
-        #region cBot Events
+        #region cBot Events        
+
+        public void StrategyInitialize()
+        {
+
+            FastEMA = Indicators.ExponentialMovingAverage(Bars.ClosePrices, PeriodFastEMA);
+            SlowEMA = Indicators.ExponentialMovingAverage(Bars.ClosePrices, PeriodSlowEMA);
+
+        }
+
+        public void StrategyRun()
+        {
+
+            bool SharedConditions = !OpenedInThisBar && StrategyPositions.Length < MaxTrades && Bars.LastGAP(Symbol.Digits) <= Symbol.PipsToDigits(GAP) && Symbol.RealSpread() <= SpreadToTrigger;
+
+            if (Buy && Sell)
+            {
+
+                Print("Trigger Buy and Sell, strategy error.");
+                return;
+
+            }
+
+            MonenyManagement1 = new Extensions.MonenyManagement(Account, MyCapital, MyRisk, FixedLots, StopLoss > 0 ? StopLoss : FakeSL, Symbol);
+            double lotSize = MonenyManagement1.GetLotSize();
+
+            double volumeInUnits = Symbol.QuantityToVolumeInUnits(lotSize);
+
+            if (Buy)
+            {
+
+                if (SharedConditions)
+                {
+
+                    ExecuteMarketRangeOrder(TradeType.Buy, SymbolName, volumeInUnits, 2, Ask, MyLabel, StopLoss, TakeProfit);
+                    OpenedInThisBar = true;
+
+                }
+
+            }
+            else if (Sell)
+            {
+
+                if (SharedConditions)
+                {
+
+                    ExecuteMarketRangeOrder(TradeType.Sell, SymbolName, volumeInUnits, 2, Bid, MyLabel, StopLoss, TakeProfit);
+                    OpenedInThisBar = true;
+
+                }
+
+            }
+
+        }
+
         protected override void OnStart()
         {
 
-            Print(IAmInPause);
-            double volumeInUnits = Symbol.QuantityToVolumeInUnits(0.01);
+            Print(NAME, " ", VERSION);
 
-            // -->ExecuteMarketRangeOrder(TradeType.Buy, Symbol.Name, volumeInUnits, 2, Symbol.Ask, MyLabel, 0, 0);
-            // -->ExecuteMarketRangeOrder(TradeType.Sell, Symbol.Name, volumeInUnits, 2, Symbol.Bid, MyLabel, 0, 0);
+            if (FakeSL == 0) FakeSL = 100;
+
+            StrategyInitialize();
 
 
         }
@@ -639,14 +975,25 @@ namespace cAlgo.Robots
         protected override void OnTick()
         {
 
-            Position[] all = Positions.FindAll(MyLabel);
+            bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
-            foreach (Position position in all)
+            StrategyNetProfit = 0;
+
+            StrategyPositions = Positions.FindAll(MyLabel, SymbolName);
+
+            foreach (Position position in StrategyPositions)
             {
 
-                Symbol PositionSymbol = Symbols.GetSymbol(position.SymbolName);
+                bool OnTriggerClose = CloseOnTrigger && ((Buy && position.TradeType == TradeType.Sell) || (Sell && position.TradeType == TradeType.Buy));
+                if (OnTriggerClose || OnMoneyTargetClose)
+                {
 
-                TradeResult result = position.BreakEven(PositionSymbol, BreakEvenActivation, BreakEvenDistance);
+                    position.Close();
+                    continue;
+
+                }
+
+                TradeResult result = position.BreakEven(Symbol, BreakEvenActivation, BreakEvenDistance);
 
                 if (result != null)
                 {
@@ -654,19 +1001,19 @@ namespace cAlgo.Robots
                     if (result.IsSuccessful)
                     {
 
-                        Print("Break Even successfully modified!!!");
+                        // --> Break Even successfully modified!!!
 
                     }
                     else
                     {
 
-                        Print("Error: {0}", result.Error);
+                        // --> Print("Error: {0}", result.Error);
 
                     }
 
                 }
 
-                result = position.TrailingStop(PositionSymbol, TrailingActivation, TrailingDistance);
+                result = position.TrailingStop(Symbol, TrailingActivation, TrailingDistance);
 
                 if (result != null)
                 {
@@ -674,19 +1021,30 @@ namespace cAlgo.Robots
                     if (result.IsSuccessful)
                     {
 
-                        Print("TrailingStop successfully modified!!!");
+                        // --> TrailingStop successfully modified!!!
 
                     }
                     else
                     {
 
-                        Print("Error: {0}", result.Error);
+                        // --> Print("Error: {0}", result.Error);
 
                     }
 
                 }
+
+                StrategyNetProfit += position.NetProfit;
 
             }
+
+            StrategyRun();
+
+        }
+
+        protected override void OnBar()
+        {
+
+            OpenedInThisBar = false;
 
         }
 
@@ -696,10 +1054,6 @@ namespace cAlgo.Robots
 
 
         }
-
-        #endregion
-
-        #region Methods
 
         #endregion
 
