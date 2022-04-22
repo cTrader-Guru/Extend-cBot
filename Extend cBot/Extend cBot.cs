@@ -528,7 +528,6 @@ namespace cAlgo
 
         #region Class
 
-
         public class MonenyManagement
         {
 
@@ -537,18 +536,11 @@ namespace cAlgo
             private double _fixedSize = 0;
             private double _pipToCalc = 30;
 
-            // --> Riferimenti agli oggetti esterni utili per il calcolo
             private IAccount _account = null;
             public readonly Symbol Symbol;
 
-            /// <summary>
-            /// Il capitale da utilizzare per il calcolo
-            /// </summary>
             public CapitalTo CapitalType = CapitalTo.Balance;
 
-            /// <summary>
-            /// La percentuale di rischio che si vuole investire
-            /// </summary>
             public double Percentage
             {
 
@@ -558,9 +550,6 @@ namespace cAlgo
                 set { _percentage = (value > 0 && value <= 100) ? value : 0; }
             }
 
-            /// <summary>
-            /// La size fissa da utilizzare, bypassa tutti i parametri di calcolo
-            /// </summary>
             public double FixedSize
             {
 
@@ -571,22 +560,15 @@ namespace cAlgo
                 set { _fixedSize = (value >= _minSize) ? value : 0; }
             }
 
-
-            /// <summary>
-            /// La distanza massima dall'ingresso con il quale calcolare le size
-            /// </summary>
             public double PipToCalc
             {
 
                 get { return _pipToCalc; }
 
                 set { _pipToCalc = (value > 0) ? value : 100; }
+            
             }
 
-
-            /// <summary>
-            /// Il capitale effettivo sul quale calcolare il rischio
-            /// </summary>
             public double Capital
             {
 
@@ -609,9 +591,6 @@ namespace cAlgo
                 }
             }
 
-
-
-            // --> Costruttore
             public MonenyManagement(IAccount NewAccount, CapitalTo NewCapitalTo, double NewPercentage, double NewFixedSize, double NewPipToCalc, Symbol NewSymbol)
             {
 
@@ -626,24 +605,18 @@ namespace cAlgo
 
             }
 
-            /// <summary>
-            /// Restituisce il numero di lotti in formato 0.01
-            /// </summary>
             public double GetLotSize()
             {
 
-                // --> Hodeciso di usare una size fissa
                 if (FixedSize > 0)
                     return FixedSize;
 
-                // --> La percentuale di rischio in denaro
                 double moneyrisk = Capital / 100 * Percentage;
 
-                // --> Traduco lo stoploss o il suo riferimento in double
                 double sl_double = PipToCalc * Symbol.PipSize;
 
-                // --> In formato 0.01 = microlotto double lots = Math.Round(Symbol.VolumeInUnitsToQuantity(moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
-                // --> In formato volume 1K = 1000 Math.Round((moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
+                // --> 0.01 = microlotto double lots = Math.Round(Symbol.VolumeInUnitsToQuantity(moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
+                // --> volume 1K = 1000 Math.Round((moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
                 double lots = Math.Round(Symbol.VolumeInUnitsToQuantity(moneyrisk / ((sl_double * Symbol.TickValue) / Symbol.TickSize)), 2);
 
                 if (lots < _minSize)
@@ -964,8 +937,6 @@ namespace cAlgo.Robots
         {
 
             Print(NAME, " ", VERSION);
-
-            if (FakeSL == 0) FakeSL = 100;
 
             StrategyInitialize();
 
