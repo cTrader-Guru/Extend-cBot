@@ -529,7 +529,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "1.0.1";
 
         #endregion
 
@@ -573,6 +573,26 @@ namespace cAlgo.Robots
 
             }
 
+        }
+
+        #endregion
+
+        #region Strategy
+
+        [Parameter("Stop Loss", Group = "Strategy", DefaultValue = 10, MinValue = 0, Step = 0.1)]
+        public double StopLoss { get; set; }
+
+        [Parameter("Take Profit R:R 1:?", Group = "Strategy", DefaultValue = 2, MinValue = 0, Step = 0.1)]
+        public double TakeProfitRR { get; set; }
+
+        public double TakeProfit
+        {
+            get {
+
+                return Math.Round(StopLoss * TakeProfitRR, 1);
+            
+            }
+        
         }
 
         #endregion
