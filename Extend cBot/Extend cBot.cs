@@ -197,6 +197,15 @@ namespace cAlgo
 
         }
 
+        public enum OpenTradeType
+        {
+
+            All,
+            Buy,
+            Sell
+
+        }
+
         #endregion
 
         #region Helper
@@ -650,7 +659,7 @@ namespace cAlgo.Robots
             get
             {
 
-                return FastEMA.Result.Last(2) <= SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1);
+                return FastEMA.Result.Last(2) < SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1);
 
             }
 
@@ -661,7 +670,7 @@ namespace cAlgo.Robots
             get
             {
 
-                return FastEMA.Result.Last(2) >= SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
+                return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
 
             }
 
@@ -725,7 +734,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.2";
+        public const string VERSION = "1.0.3";
 
         #endregion
 
@@ -775,6 +784,9 @@ namespace cAlgo.Robots
 
         #region Strategy
 
+        [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = Extensions.OpenTradeType.All)]
+        public Extensions.OpenTradeType MyOpenTradeType { get; set; }
+
         [Parameter("Stop Loss", Group = "Strategy", DefaultValue = 10, MinValue = 0, Step = 0.1)]
         public double StopLoss { get; set; }
 
@@ -811,13 +823,13 @@ namespace cAlgo.Robots
         [Parameter("Money Target Minimum Trades", Group = "Strategy", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MoneyTargetTrades { get; set; }
 
-        [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
+        [Parameter("Max Spread allowed", Group = "Setup", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
         public double SpreadToTrigger { get; set; }
 
-        [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 1, MinValue = 0, Step = 0.01)]
+        [Parameter("Max GAP Allowed (pips)", Group = "Setup", DefaultValue = 1, MinValue = 0, Step = 0.01)]
         public double GAP { get; set; }
 
-        [Parameter("Max Number of Trades", Group = "Filters", DefaultValue = 1, MinValue = 1, Step = 1)]
+        [Parameter("Max Number of Trades", Group = "Setup", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MaxTrades { get; set; }
 
         [Parameter("Fast", Group = "EMA", DefaultValue = 5, MinValue = 1)]
@@ -841,6 +853,9 @@ namespace cAlgo.Robots
 
         [Parameter("Pips To Calculate ( if no stoploss, empty = '100' )", Group = "Money Management", DefaultValue = 100, MinValue = 0, Step = 0.1)]
         public double FakeSL { get; set; }
+
+        [Parameter("% Max (zero = disabled)", Group = "Drawdown", DefaultValue = 20, MinValue = 0, MaxValue = 100, Step = 0.1)]
+        public double DDPercentage { get; set; }
 
         #endregion
 
@@ -909,11 +924,10 @@ namespace cAlgo.Robots
             if (Buy)
             {
 
-                if (SharedConditions)
+                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Sell)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Buy, SymbolName, volumeInUnits, 2, Ask, MyLabel, StopLoss, TakeProfit);
-                    OpenedInThisBar = true;
 
                 }
 
@@ -921,11 +935,10 @@ namespace cAlgo.Robots
             else if (Sell)
             {
 
-                if (SharedConditions)
+                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Buy)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Sell, SymbolName, volumeInUnits, 2, Bid, MyLabel, StopLoss, TakeProfit);
-                    OpenedInThisBar = true;
 
                 }
 
@@ -938,6 +951,8 @@ namespace cAlgo.Robots
 
             Print(NAME, " ", VERSION);
 
+            Positions.Opened += _onOpenPositions;
+
             StrategyInitialize();
 
 
@@ -948,6 +963,9 @@ namespace cAlgo.Robots
 
             bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
+            double DDControl = Math.Round( ( Account.Balance / 100 ) * DDPercentage, 2 ) * -1;
+            bool OnDrawDownClose = DDControl < 0 && StrategyNetProfit <= DDControl;
+
             StrategyNetProfit = 0;
 
             StrategyPositions = Positions.FindAll(MyLabel, SymbolName);
@@ -956,7 +974,7 @@ namespace cAlgo.Robots
             {
 
                 bool OnTriggerClose = CloseOnTrigger && ((Buy && position.TradeType == TradeType.Sell) || (Sell && position.TradeType == TradeType.Buy));
-                if (OnTriggerClose || OnMoneyTargetClose)
+                if (OnTriggerClose || OnMoneyTargetClose || OnDrawDownClose)
                 {
 
                     position.Close();
@@ -1022,7 +1040,23 @@ namespace cAlgo.Robots
         protected override void OnStop()
         {
 
+            Positions.Opened -= _onOpenPositions;
 
+        }
+
+        #endregion
+
+        #region Methods
+
+        private void _onOpenPositions(PositionOpenedEventArgs eventArgs)
+        {
+
+            if (eventArgs.Position.SymbolName == SymbolName && eventArgs.Position.Label == MyLabel)
+            {
+
+                OpenedInThisBar = true;
+
+            }
 
         }
 
