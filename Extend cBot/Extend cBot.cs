@@ -661,20 +661,29 @@ namespace cAlgo.Robots
 
         public ExponentialMovingAverage FastEMA;
         public ExponentialMovingAverage SlowEMA;
-
+        public virtual double EMAFilter { get; set; } // <-- If you want to use parameters, you have to overwrite them.
         public bool TriggerBuy
         {
 
+            get
+            {
 
-            get { return FastEMA.Result.Last(2) < SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1); }
+                return FastEMA.Result.Last(2) < SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1);
+
+            }
+
         }
 
 
         public bool TriggerSell
         {
 
-
-            get { return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1); }
+            get { 
+                
+                return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
+            
+            }
+        
         }
 
 
@@ -724,7 +733,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.4";
+        public const string VERSION = "1.0.5";
 
         #endregion
 
@@ -818,11 +827,18 @@ namespace cAlgo.Robots
         [Parameter("Max Number of Trades", Group = "Setup", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MaxTrades { get; set; }
 
+        #endregion
+
+        #region Indicators Setup
+
         [Parameter("Fast", Group = "EMA", DefaultValue = 5, MinValue = 1)]
         public int PeriodFastEMA { get; set; }
 
         [Parameter("Slow", Group = "EMA", DefaultValue = 9, MinValue = 2)]
         public int PeriodSlowEMA { get; set; }
+
+        [Parameter("Filter", Group = "EMA", DefaultValue = 20, MinValue = 2)]
+        public override double EMAFilter { get; set; }
 
         #endregion
 
@@ -873,7 +889,9 @@ namespace cAlgo.Robots
 
         public double StrategyNetProfit = 0;
 
-        public Position[] StrategyPositions = {};
+        public Position[] StrategyPositions =
+        {
+                    };
 
         Extensions.MonenyManagement MonenyManagement1;
 
