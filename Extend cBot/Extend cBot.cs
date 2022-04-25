@@ -10,6 +10,14 @@
     YouTube     : https://www.youtube.com/cTraderGuru
     GitHub      : https://github.com/ctrader-guru
 
+
+    Edit only   :
+         
+        . NAME and VERSION of this cbot according to cBot Name "public class ExtendcBot : Strategy{...}"
+        . All methods of "public class Strategy : Robot{...}"
+        . Then intialize "public void StrategyInitialize(){...}";
+        . If necessary, add the configuration parameters of any indicators
+
 */
 
 
@@ -575,8 +583,8 @@ namespace cAlgo
                 get { return _pipToCalc; }
 
                 set { _pipToCalc = (value > 0) ? value : 100; }
-            
             }
+
 
             public double Capital
             {
@@ -656,73 +664,55 @@ namespace cAlgo.Robots
 
         public bool TriggerBuy
         {
-            get
-            {
 
-                return FastEMA.Result.Last(2) < SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1);
 
-            }
-
+            get { return FastEMA.Result.Last(2) < SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) > SlowEMA.Result.Last(1); }
         }
+
 
         public bool TriggerSell
         {
-            get
-            {
 
-                return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
 
-            }
-
+            get { return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1); }
         }
+
 
         public bool FilterBuy
         {
 
-            get
-            {
 
-                return true;
 
-            }
-
+            get { return true; }
         }
+
 
         public bool FilterSell
         {
 
-            get
-            {
 
-                return true;
 
-            }
-
+            get { return true; }
         }
+
 
         public bool Buy
         {
 
-            get
-            {
 
-                return FilterBuy && TriggerBuy;
 
-            }
-
+            get { return FilterBuy && TriggerBuy; }
         }
+
 
         public bool Sell
         {
 
-            get
-            {
 
-                return FilterSell && TriggerSell;
 
-            }
-
+            get { return FilterSell && TriggerSell; }
         }
+
 
     }
 
@@ -734,7 +724,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.3";
+        public const string VERSION = "1.0.4";
 
         #endregion
 
@@ -755,10 +745,10 @@ namespace cAlgo.Robots
 
         #region Pausa
 
-        [Parameter("From", Group = "Pause", DefaultValue = 18.00, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        [Parameter("From", Group = "Pause", DefaultValue = 18.0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
         public double PauseFrom { get; set; }
 
-        [Parameter("To", Group = "Pause", DefaultValue = 9.00, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        [Parameter("To", Group = "Pause", DefaultValue = 9.0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
         public double PauseTo { get; set; }
 
         public bool IAmInPause
@@ -767,7 +757,8 @@ namespace cAlgo.Robots
             get
             {
 
-                if (PauseFrom == 0 && PauseTo == 0) return false;
+                if (PauseFrom == 0 && PauseTo == 0)
+                    return false;
 
                 double now = Server.Time.ToDouble();
 
@@ -777,8 +768,8 @@ namespace cAlgo.Robots
                 return intraday || overnight;
 
             }
-
         }
+
 
         #endregion
 
@@ -795,14 +786,11 @@ namespace cAlgo.Robots
 
         public double TakeProfit
         {
-            get
-            {
 
-                return Math.Round(StopLoss * TakeProfitRR, 1);
 
-            }
-
+            get { return Math.Round(StopLoss * TakeProfitRR, 1); }
         }
+
 
         [Parameter("Close On Trigger?", Group = "Strategy", DefaultValue = true)]
         public bool CloseOnTrigger { get; set; }
@@ -812,14 +800,12 @@ namespace cAlgo.Robots
         public double MoneyTarget
         {
 
-            get { 
-            
-                return Math.Round( (Account.Balance / 100 ) * MoneyTargetPercentage, 2);
 
-            }
 
+            get { return Math.Round((Account.Balance / 100) * MoneyTargetPercentage, 2); }
         }
-        
+
+
         [Parameter("Money Target Minimum Trades", Group = "Strategy", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MoneyTargetTrades { get; set; }
 
@@ -893,7 +879,7 @@ namespace cAlgo.Robots
 
         #endregion
 
-        #region cBot Events        
+        #region cBot Events
 
         public void StrategyInitialize()
         {
@@ -963,7 +949,7 @@ namespace cAlgo.Robots
 
             bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
-            double DDControl = Math.Round( ( Account.Balance / 100 ) * DDPercentage, 2 ) * -1;
+            double DDControl = Math.Round((Account.Balance / 100) * DDPercentage, 2) * -1;
             bool OnDrawDownClose = DDControl < 0 && StrategyNetProfit <= DDControl;
 
             StrategyNetProfit = 0;
