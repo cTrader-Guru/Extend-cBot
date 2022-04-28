@@ -733,7 +733,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.5";
+        public const string VERSION = "1.0.6";
 
         #endregion
 
@@ -853,7 +853,7 @@ namespace cAlgo.Robots
         [Parameter("% Risk", Group = "Money Management", DefaultValue = 1, MinValue = 0.1, Step = 0.1)]
         public double MyRisk { get; set; }
 
-        [Parameter("Pips To Calculate ( if no stoploss, empty = '100' )", Group = "Money Management", DefaultValue = 100, MinValue = 0, Step = 0.1)]
+        [Parameter("Pips To Calculate ( empty = stoploss )", Group = "Money Management", DefaultValue = 100, MinValue = 0, Step = 0.1)]
         public double FakeSL { get; set; }
 
         [Parameter("% Max (zero = disabled)", Group = "Drawdown", DefaultValue = 20, MinValue = 0, MaxValue = 100, Step = 0.1)]
@@ -920,7 +920,7 @@ namespace cAlgo.Robots
 
             }
 
-            MonenyManagement1 = new Extensions.MonenyManagement(Account, MyCapital, MyRisk, FixedLots, StopLoss > 0 ? StopLoss : FakeSL, Symbol);
+            MonenyManagement1 = new Extensions.MonenyManagement(Account, MyCapital, MyRisk, FixedLots, FakeSL > 0 ? FakeSL : StopLoss, Symbol);
             double lotSize = MonenyManagement1.GetLotSize();
 
             double volumeInUnits = Symbol.QuantityToVolumeInUnits(lotSize);
