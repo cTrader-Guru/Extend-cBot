@@ -1,7 +1,7 @@
 ﻿
 
 
-/* --> CTRADER GURU
+/* --> cTrader Guru | Template 'Extend cBot' 1.0.7
  
     Homepage    : https://ctrader.guru/
     Telegram    : https://t.me/ctraderguru
@@ -661,7 +661,10 @@ namespace cAlgo.Robots
 
         public ExponentialMovingAverage FastEMA;
         public ExponentialMovingAverage SlowEMA;
+
+        /* Override Example
         public virtual double EMAFilter { get; set; } // <-- If you want to use parameters, you have to overwrite them.
+        */
         public bool TriggerBuy
         {
 
@@ -678,12 +681,13 @@ namespace cAlgo.Robots
         public bool TriggerSell
         {
 
-            get { 
-                
+            get
+            {
+
                 return FastEMA.Result.Last(2) > SlowEMA.Result.Last(2) && FastEMA.Result.Last(1) < SlowEMA.Result.Last(1);
-            
+
             }
-        
+
         }
 
 
@@ -733,7 +737,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.6";
+        public const string VERSION = "1.0.7";
 
         #endregion
 
@@ -747,17 +751,49 @@ namespace cAlgo.Robots
         [Parameter("Label ( Magic Name )", Group = "Identity", DefaultValue = NAME)]
         public string MyLabel { get; set; }
 
-        [Parameter("Preset information", Group = "Identity", DefaultValue = "Standard preset without any strategy")]
+        [Parameter("Preset information", Group = "Identity", DefaultValue = "USDJPY 5m | 29.04.2021 to 29.04.2022 | €1000")]
         public string PresetInfo { get; set; }
+
+        #endregion
+
+        #region Strategy
+
+        [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = Extensions.OpenTradeType.Buy)]
+        public Extensions.OpenTradeType MyOpenTradeType { get; set; }
+
+        [Parameter("Stop Loss", Group = "Strategy", DefaultValue = 30, MinValue = 0, Step = 0.1)]
+        public double StopLoss { get; set; }
+
+        [Parameter("Take Profit R:R 1:?", Group = "Strategy", DefaultValue = 5, MinValue = 0, Step = 0.1)]
+        public double TakeProfitRR { get; set; }
+
+        public double TakeProfit
+        {
+
+
+            get { return Math.Round(StopLoss * TakeProfitRR, 1); }
+        }
+
+        [Parameter("Close On Trigger?", Group = "Strategy", DefaultValue = false)]
+        public bool CloseOnTrigger { get; set; }
+
+        [Parameter("Use BreakEven?", Group = "Strategy", DefaultValue = false)]
+        public bool UseBreakEven { get; set; }
+
+        [Parameter("Use Trailing?", Group = "Strategy", DefaultValue = false)]
+        public bool UseTrailing { get; set; }
+
+        [Parameter("Use Deviation Martingala? (bypass all)", Group = "Strategy", DefaultValue = true)]
+        public bool UseDM { get; set; }
 
         #endregion
 
         #region Pausa
 
-        [Parameter("From", Group = "Pause", DefaultValue = 18.0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        [Parameter("From (18.0 = 18:00)", Group = "Pause", DefaultValue = 0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
         public double PauseFrom { get; set; }
 
-        [Parameter("To", Group = "Pause", DefaultValue = 9.0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        [Parameter("To (8.20 = 08:20)", Group = "Pause", DefaultValue = 0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
         public double PauseTo { get; set; }
 
         public bool IAmInPause
@@ -782,29 +818,22 @@ namespace cAlgo.Robots
 
         #endregion
 
-        #region Strategy
+        #region Filters
 
-        [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = Extensions.OpenTradeType.All)]
-        public Extensions.OpenTradeType MyOpenTradeType { get; set; }
+        [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
+        public double SpreadToTrigger { get; set; }
 
-        [Parameter("Stop Loss", Group = "Strategy", DefaultValue = 10, MinValue = 0, Step = 0.1)]
-        public double StopLoss { get; set; }
+        [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 2, MinValue = 0, Step = 0.01)]
+        public double GAP { get; set; }
 
-        [Parameter("Take Profit R:R 1:?", Group = "Strategy", DefaultValue = 2, MinValue = 0, Step = 0.1)]
-        public double TakeProfitRR { get; set; }
+        [Parameter("Max Number of Trades", Group = "Filters", DefaultValue = 1, MinValue = 1, Step = 1)]
+        public int MaxTrades { get; set; }
 
-        public double TakeProfit
-        {
+        #endregion
 
+        #region Money Target
 
-            get { return Math.Round(StopLoss * TakeProfitRR, 1); }
-        }
-
-
-        [Parameter("Close On Trigger?", Group = "Strategy", DefaultValue = true)]
-        public bool CloseOnTrigger { get; set; }
-
-        [Parameter("Money Target (%, zero disabled)", Group = "Strategy", DefaultValue = 0, MinValue = 0, Step = 0.1)]
+        [Parameter("Percentage (zero = disabled)", Group = "Money Target", DefaultValue = 0, MinValue = 0, Step = 0.1)]
         public double MoneyTargetPercentage { get; set; }
         public double MoneyTarget
         {
@@ -815,33 +844,11 @@ namespace cAlgo.Robots
         }
 
 
-        [Parameter("Money Target Minimum Trades", Group = "Strategy", DefaultValue = 1, MinValue = 1, Step = 1)]
+        [Parameter("Minimum Trades to Activation", Group = "Money Target", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MoneyTargetTrades { get; set; }
 
-        [Parameter("Max Spread allowed", Group = "Setup", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
-        public double SpreadToTrigger { get; set; }
-
-        [Parameter("Max GAP Allowed (pips)", Group = "Setup", DefaultValue = 1, MinValue = 0, Step = 0.01)]
-        public double GAP { get; set; }
-
-        [Parameter("Max Number of Trades", Group = "Setup", DefaultValue = 1, MinValue = 1, Step = 1)]
-        public int MaxTrades { get; set; }
-
         #endregion
-
-        #region Indicators Setup
-
-        [Parameter("Fast", Group = "EMA", DefaultValue = 5, MinValue = 1)]
-        public int PeriodFastEMA { get; set; }
-
-        [Parameter("Slow", Group = "EMA", DefaultValue = 9, MinValue = 2)]
-        public int PeriodSlowEMA { get; set; }
-
-        [Parameter("Filter", Group = "EMA", DefaultValue = 20, MinValue = 2)]
-        public override double EMAFilter { get; set; }
-
-        #endregion
-
+                
         #region Money Management
 
         [Parameter("Fixed Lots (bypass all Capital)", Group = "Money Management", DefaultValue = 0, MinValue = 0, Step = 0.01)]
@@ -853,17 +860,32 @@ namespace cAlgo.Robots
         [Parameter("% Risk", Group = "Money Management", DefaultValue = 1, MinValue = 0.1, Step = 0.1)]
         public double MyRisk { get; set; }
 
-        [Parameter("Pips To Calculate ( empty = stoploss )", Group = "Money Management", DefaultValue = 100, MinValue = 0, Step = 0.1)]
+        [Parameter("Pips To Calculate ( empty = stoploss )", Group = "Money Management", DefaultValue = 30, MinValue = 0, Step = 0.1)]
         public double FakeSL { get; set; }
 
-        [Parameter("% Max (zero = disabled)", Group = "Drawdown", DefaultValue = 20, MinValue = 0, MaxValue = 100, Step = 0.1)]
+        [Parameter("% Max (zero = disabled)", Group = "Drawdown", DefaultValue = 0, MinValue = 0, MaxValue = 100, Step = 0.1)]
         public double DDPercentage { get; set; }
 
         #endregion
+        
+        #region Indicators Setup
+
+        [Parameter("Fast", Group = "EMA", DefaultValue = 30, MinValue = 1)]
+        public int PeriodFastEMA { get; set; }
+
+        [Parameter("Slow", Group = "EMA", DefaultValue = 50, MinValue = 2)]
+        public int PeriodSlowEMA { get; set; }
+        
+        /* Override Example
+        [Parameter("Filter", Group = "EMA", DefaultValue = 20, MinValue = 2)]
+        public override double EMAFilter { get; set; }
+        */
+
+#endregion
 
         #region BreakEven
 
-        [Parameter("Activation (zero = disabled)", Group = "Break Even", DefaultValue = 5, MinValue = 0, Step = 0.1)]
+        [Parameter("Activation (zero = disabled)", Group = "Break Even", DefaultValue = 10, MinValue = 0, Step = 0.1)]
         public double BreakEvenActivation { get; set; }
 
         [Parameter("Distance", Group = "Break Even", DefaultValue = 1.1, MinValue = 0, Step = 0.1)]
@@ -873,11 +895,21 @@ namespace cAlgo.Robots
 
         #region Trailing
 
-        [Parameter("Activation (zero = disabled)", Group = "Trailing", DefaultValue = 10, MinValue = 0, Step = 0.1)]
+        [Parameter("Activation (zero = disabled)", Group = "Trailing", DefaultValue = 15, MinValue = 0, Step = 0.1)]
         public double TrailingActivation { get; set; }
 
         [Parameter("Distance", Group = "Trailing", DefaultValue = 10, MinValue = 1, Step = 0.1)]
         public double TrailingDistance { get; set; }
+
+        #endregion
+
+        #region Deviation Martingala
+
+        [Parameter("Multiplier (zero = disabled)", Group = "Deviation Martingala", DefaultValue = 1.5, MinValue = 0, Step = 0.1)]
+        public double DMMultiplier { get; set; }
+
+        [Parameter("Max Consecutive Loss (zero = infinite)", Group = "Deviation Martingala", DefaultValue = 6, MinValue = 0, Step = 1)]
+        public int DMMaxLoss { get; set; }
 
         #endregion
 
@@ -894,6 +926,10 @@ namespace cAlgo.Robots
                     };
 
         Extensions.MonenyManagement MonenyManagement1;
+
+        public int ConsecutiveLoss = 0;
+
+        public DateTime PreventGlitch;
 
         #endregion
 
@@ -956,6 +992,7 @@ namespace cAlgo.Robots
             Print(NAME, " ", VERSION);
 
             Positions.Opened += _onOpenPositions;
+            Positions.Closed += _onClosePositions;
 
             StrategyInitialize();
 
@@ -970,6 +1007,8 @@ namespace cAlgo.Robots
             double DDControl = Math.Round((Account.Balance / 100) * DDPercentage, 2) * -1;
             bool OnDrawDownClose = DDControl < 0 && StrategyNetProfit <= DDControl;
 
+            bool UsingRecovery = UseDM && DMMultiplier > 0 && ConsecutiveLoss > 0;
+
             StrategyNetProfit = 0;
 
             StrategyPositions = Positions.FindAll(MyLabel, SymbolName);
@@ -977,50 +1016,67 @@ namespace cAlgo.Robots
             foreach (Position position in StrategyPositions)
             {
 
-                bool OnTriggerClose = CloseOnTrigger && ((Buy && position.TradeType == TradeType.Sell) || (Sell && position.TradeType == TradeType.Buy));
-                if (OnTriggerClose || OnMoneyTargetClose || OnDrawDownClose)
+                if (!UsingRecovery)
                 {
 
-                    position.Close();
-                    continue;
-
-                }
-
-                TradeResult result = position.BreakEven(Symbol, BreakEvenActivation, BreakEvenDistance);
-
-                if (result != null)
-                {
-
-                    if (result.IsSuccessful)
+                    bool OnTriggerClose = CloseOnTrigger && ((Buy && position.TradeType == TradeType.Sell) || (Sell && position.TradeType == TradeType.Buy));
+                    if (OnTriggerClose || OnMoneyTargetClose || OnDrawDownClose)
                     {
 
-                        // --> Break Even successfully modified!!!
-
-                    }
-                    else
-                    {
-
-                        // --> Print("Error: {0}", result.Error);
+                        position.Close();
+                        continue;
 
                     }
 
-                }
+                    TradeResult result = null;
 
-                result = position.TrailingStop(Symbol, TrailingActivation, TrailingDistance);
-
-                if (result != null)
-                {
-
-                    if (result.IsSuccessful)
+                    if (UseBreakEven)
                     {
 
-                        // --> TrailingStop successfully modified!!!
+                        result = position.BreakEven(Symbol, BreakEvenActivation, BreakEvenDistance);
+
+                        if (result != null)
+                        {
+
+                            if (result.IsSuccessful)
+                            {
+
+                                // --> Break Even successfully modified!!!
+
+                            }
+                            else
+                            {
+
+                                // --> Print("Error: {0}", result.Error);
+
+                            }
+
+                        }
 
                     }
-                    else
+
+                    if (UseTrailing)
                     {
 
-                        // --> Print("Error: {0}", result.Error);
+                        result = position.TrailingStop(Symbol, TrailingActivation, TrailingDistance);
+
+                        if (result != null)
+                        {
+
+                            if (result.IsSuccessful)
+                            {
+
+                                // --> TrailingStop successfully modified!!!
+
+                            }
+                            else
+                            {
+
+                                // --> Print("Error: {0}", result.Error);
+
+                            }
+
+                        }
 
                     }
 
@@ -1045,20 +1101,73 @@ namespace cAlgo.Robots
         {
 
             Positions.Opened -= _onOpenPositions;
-
+            Positions.Closed -= _onClosePositions;
         }
 
         #endregion
 
         #region Methods
-
         private void _onOpenPositions(PositionOpenedEventArgs eventArgs)
         {
 
-            if (eventArgs.Position.SymbolName == SymbolName && eventArgs.Position.Label == MyLabel)
+            Position position = eventArgs.Position;
+            if (position.SymbolName != SymbolName || position.Label != MyLabel) return;
+
+            OpenedInThisBar = true;
+
+        }
+        private void _onClosePositions(PositionClosedEventArgs eventArgs)
+        {
+
+            /*
+                Once it happened that it opened 2 operations at the same time
+                so the count was destined to fail, in the error you must
+                to make sure that the number of losses is always correct.
+            */
+            if (PreventGlitch == Server.Time)
             {
 
-                OpenedInThisBar = true;
+                Print("Glitch when close position, it is probably a bug of the cTrader and not of this cBot because 2 positions (Martingala) were opened simultaneously.");
+                return;
+
+            }
+
+            PreventGlitch = Server.Time;
+
+            Position position = eventArgs.Position;
+            if (position.SymbolName != SymbolName || position.Label != MyLabel) return;
+
+
+            if (position.NetProfit < 0)
+            {
+            
+                ConsecutiveLoss++;
+
+                bool UseRecovery = UseDM && DMMultiplier > 0 && (DMMaxLoss == 0 || ConsecutiveLoss < DMMaxLoss);                
+
+                if (UseRecovery)
+                {
+
+                    TradeType reversed = (position.TradeType == TradeType.Sell) ? TradeType.Buy : TradeType.Sell;
+
+                    double tmpSL = position.StopLoss == null ? 0 : Math.Abs(Math.Round(position.EntryPrice - (double)position.StopLoss, Symbol.Digits));
+
+                    ExecuteMarketOrder(reversed, SymbolName, Symbol.QuantityToVolumeInUnits(Math.Round(position.Quantity * DMMultiplier, 2)), MyLabel, Symbol.DigitsToPips(tmpSL), Symbol.DigitsToPips(tmpSL));
+                    Print( "Open Martingala Deviation, consecutive loss {0}", ConsecutiveLoss );
+
+                }
+                else
+                {
+
+                    ConsecutiveLoss = 0;
+
+                }
+
+            }
+            else
+            {
+
+                ConsecutiveLoss = 0;
 
             }
 
