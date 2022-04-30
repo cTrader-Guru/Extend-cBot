@@ -1,7 +1,7 @@
 ﻿
 
 
-/* --> cTrader Guru | Template 'Extend cBot' 1.0.8
+/* --> cTrader Guru | Template 'Extend cBot' 1.0.9
  
     Homepage    : https://ctrader.guru/
     Telegram    : https://t.me/ctraderguru
@@ -731,7 +731,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.8";
+        public const string VERSION = "1.0.9";
 
         #endregion
 
@@ -915,7 +915,7 @@ namespace cAlgo.Robots
 
         public double StrategyNetProfit = 0;
 
-        public Position[] StrategyPositions = 
+        public Position[] StrategyPositions =
         {
                     };
 
@@ -963,6 +963,7 @@ namespace cAlgo.Robots
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Buy, SymbolName, volumeInUnits, 2, Ask, MyLabel, StopLoss, TakeProfit);
+                    Print("Open on trigger, consecutive loss {0}", ConsecutiveLoss);
 
                 }
 
@@ -974,6 +975,7 @@ namespace cAlgo.Robots
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Sell, SymbolName, volumeInUnits, 2, Bid, MyLabel, StopLoss, TakeProfit);
+                    Print("Open on trigger, consecutive loss {0}", ConsecutiveLoss);
 
                 }
 
@@ -1114,13 +1116,12 @@ namespace cAlgo.Robots
         }
         private void _onClosePositions(PositionClosedEventArgs eventArgs)
         {
+            
+            Position position = eventArgs.Position;
+            if (position.SymbolName != SymbolName || position.Label != MyLabel)
+                return;
 
-                        /*
-                Once it happened that it opened 2 operations at the same time
-                so the count was destined to fail, in the error you must
-                to make sure that the number of losses is always correct.
-            */
-if (PreventGlitch == Server.Time)
+            if (PreventGlitch == Server.Time)
             {
 
                 Print("Glitch when close position, it is probably a bug of the cTrader and not of this cBot because 2 positions (Martingala) were opened simultaneously.");
@@ -1129,11 +1130,6 @@ if (PreventGlitch == Server.Time)
             }
 
             PreventGlitch = Server.Time;
-
-            Position position = eventArgs.Position;
-            if (position.SymbolName != SymbolName || position.Label != MyLabel)
-                return;
-
 
             if (position.NetProfit < 0)
             {
