@@ -1,7 +1,7 @@
 ﻿
 
 
-/* --> cTrader Guru | Template 'Extend cBot' 1.0.9
+/* --> cTrader Guru | Template 'Extend cBot' 1.1.0
  
     Homepage    : https://ctrader.guru/
     Telegram    : https://t.me/ctraderguru
@@ -731,7 +731,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.0.9";
+        public const string VERSION = "1.1.0";
 
         #endregion
 
@@ -817,7 +817,7 @@ namespace cAlgo.Robots
         [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
         public double SpreadToTrigger { get; set; }
 
-        [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 2, MinValue = 0, Step = 0.01)]
+        [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 2, MinValue = 0, Step = 0.1)]
         public double GAP { get; set; }
 
         [Parameter("Max Number of Trades", Group = "Filters", DefaultValue = 1, MinValue = 1, Step = 1)]
@@ -915,7 +915,7 @@ namespace cAlgo.Robots
 
         public double StrategyNetProfit = 0;
 
-        public Position[] StrategyPositions =
+        public Position[] StrategyPositions = 
         {
                     };
 
@@ -1116,7 +1116,7 @@ namespace cAlgo.Robots
         }
         private void _onClosePositions(PositionClosedEventArgs eventArgs)
         {
-            
+
             Position position = eventArgs.Position;
             if (position.SymbolName != SymbolName || position.Label != MyLabel)
                 return;
