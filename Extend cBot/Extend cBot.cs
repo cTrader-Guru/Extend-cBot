@@ -1,7 +1,7 @@
 ﻿
 
 
-/* --> cTrader Guru | Template 'Extend cBot' 1.1.0
+/* --> cTrader Guru | Template 'Extend cBot' 1.1.1
  
     Homepage    : https://ctrader.guru/
     Telegram    : https://t.me/ctraderguru
@@ -731,7 +731,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.1.0";
+        public const string VERSION = "1.1.1";
 
         #endregion
 
@@ -822,6 +822,11 @@ namespace cAlgo.Robots
 
         [Parameter("Max Number of Trades", Group = "Filters", DefaultValue = 1, MinValue = 1, Step = 1)]
         public int MaxTrades { get; set; }
+
+        [Parameter("Minimum Distance Between Trades", Group = "Filters", DefaultValue = 15, MinValue = 0, Step = 0.1)]
+        public double MinDistanceTrades { get; set; }
+        public double upperTrade = 0;
+        public double lowerTrade = 0;
 
         #endregion
 
@@ -915,7 +920,7 @@ namespace cAlgo.Robots
 
         public double StrategyNetProfit = 0;
 
-        public Position[] StrategyPositions = 
+        public Position[] StrategyPositions =
         {
                     };
 
@@ -936,7 +941,6 @@ namespace cAlgo.Robots
             SlowEMA = Indicators.ExponentialMovingAverage(Bars.ClosePrices, PeriodSlowEMA);
 
         }
-
         public void StrategyRun()
         {
 
@@ -951,6 +955,8 @@ namespace cAlgo.Robots
 
             }
 
+            double DistanceMin = Symbol.PipsToDigits(MinDistanceTrades);
+
             MonenyManagement1 = new Extensions.MonenyManagement(Account, MyCapital, MyRisk, FixedLots, FakeSL > 0 ? FakeSL : StopLoss, Symbol);
             double lotSize = MonenyManagement1.GetLotSize();
 
@@ -959,7 +965,11 @@ namespace cAlgo.Robots
             if (Buy)
             {
 
-                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Sell)
+                bool HaveAskDistance = upperTrade > 0 && Math.Abs(Math.Round(Ask - upperTrade, Symbol.Digits)) >= DistanceMin;
+                HaveAskDistance = HaveAskDistance && Math.Abs(Math.Round(Ask - lowerTrade, Symbol.Digits)) >= DistanceMin;
+                HaveAskDistance = StrategyPositions.Length == 0 || MinDistanceTrades == 0 || HaveAskDistance;
+
+                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Sell && HaveAskDistance)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Buy, SymbolName, volumeInUnits, 2, Ask, MyLabel, StopLoss, TakeProfit);
@@ -971,7 +981,11 @@ namespace cAlgo.Robots
             else if (Sell)
             {
 
-                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Buy)
+                bool HaveBidDistance = lowerTrade > 0 && Math.Abs(Math.Round(Bid - upperTrade, Symbol.Digits)) >= DistanceMin;
+                HaveBidDistance = HaveBidDistance && Math.Abs(Math.Round(Bid - lowerTrade, Symbol.Digits)) >= DistanceMin;
+                HaveBidDistance = StrategyPositions.Length == 0 || MinDistanceTrades == 0 || HaveBidDistance;
+
+                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Buy && HaveBidDistance)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Sell, SymbolName, volumeInUnits, 2, Bid, MyLabel, StopLoss, TakeProfit);
@@ -982,7 +996,6 @@ namespace cAlgo.Robots
             }
 
         }
-
         protected override void OnStart()
         {
 
@@ -1006,6 +1019,9 @@ namespace cAlgo.Robots
 
             bool UsingRecovery = UseDM && DMMultiplier > 0 && ConsecutiveLoss > 0;
 
+            lowerTrade = 0;
+            upperTrade = 0;
+
             StrategyNetProfit = 0;
 
             StrategyPositions = Positions.FindAll(MyLabel, SymbolName);
@@ -1024,6 +1040,9 @@ namespace cAlgo.Robots
                         continue;
 
                     }
+
+                    if (lowerTrade == 0 || position.EntryPrice < lowerTrade) lowerTrade = position.EntryPrice;
+                    if (upperTrade == 0 || position.EntryPrice > upperTrade) upperTrade = position.EntryPrice;
 
                     TradeResult result = null;
 
