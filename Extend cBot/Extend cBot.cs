@@ -1,7 +1,7 @@
 ﻿
 
 
-/* --> cTrader Guru | Template 'Extend cBot' 1.1.1
+/* --> cTrader Guru | Template 'Extend cBot' 1.1.2
  
     Homepage    : https://ctrader.guru/
     Telegram    : https://t.me/ctraderguru
