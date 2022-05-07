@@ -731,7 +731,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.1.1";
+        public const string VERSION = "1.1.2";
 
         #endregion
 
@@ -945,7 +945,7 @@ namespace cAlgo.Robots
         {
 
             bool UsingRecovery = UseDM && DMMultiplier > 0 && ConsecutiveLoss > 0;
-            bool SharedConditions = !UsingRecovery && !OpenedInThisBar && StrategyPositions.Length < MaxTrades && Bars.LastGAP(Symbol.Digits) <= Symbol.PipsToDigits(GAP) && Symbol.RealSpread() <= SpreadToTrigger;
+            bool SharedConditions = !IAmInPause && !UsingRecovery && !OpenedInThisBar && StrategyPositions.Length < MaxTrades && Bars.LastGAP(Symbol.Digits) <= Symbol.PipsToDigits(GAP) && Symbol.RealSpread() <= SpreadToTrigger;
 
             if (Buy && Sell)
             {
