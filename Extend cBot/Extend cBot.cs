@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.073";
+        public const string VERSION = "1.074";
 
         #endregion
 
@@ -118,7 +118,7 @@ namespace cAlgo.Robots
 
         #region Filters
 
-        [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0.1, Step = 0.1)]
+        [Parameter("Max Spread allowed", Group = "Filters", DefaultValue = 1.5, MinValue = 0, Step = 0.1)]
         public double SpreadToTrigger { get; set; }
 
         [Parameter("Max GAP Allowed (pips)", Group = "Filters", DefaultValue = 2, MinValue = 0, Step = 0.1)]
