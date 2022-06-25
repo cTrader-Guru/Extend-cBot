@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.074";
+        public const string VERSION = "1.075";
 
         #endregion
 
@@ -469,10 +469,10 @@ namespace cAlgo.Robots
 
                     TradeType reversed = (position.TradeType == TradeType.Sell) ? TradeType.Buy : TradeType.Sell;
 
-                    double tmpSL = position.StopLoss == null ? 0 : Math.Abs(Math.Round(position.EntryPrice - (double)position.StopLoss, Symbol.Digits));
+                    double stops = Math.Abs(position.Pips);
 
-                    ExecuteMarketOrder(reversed, SymbolName, Symbol.QuantityToVolumeInUnits(Math.Round(position.Quantity * DMMultiplier, 2)), MyLabel, Symbol.DigitsToPips(tmpSL), Symbol.DigitsToPips(tmpSL));
-                    Print("Open Martingala Deviation, consecutive loss {0}", ConsecutiveLoss);
+                    ExecuteMarketOrder(reversed, SymbolName, Symbol.QuantityToVolumeInUnits(Math.Round(position.Quantity * DMMultiplier, 2)), MyLabel, stops, stops);
+                    Print("Open Martingala Deviation, consecutive loss {0}, pips {1}", ConsecutiveLoss, stops);
 
                 }
                 else
