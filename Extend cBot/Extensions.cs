@@ -183,6 +183,15 @@ namespace cAlgo
 
         }
 
+        public enum LoopMode
+        {
+
+            OnTick,
+            OnBar,
+            OnTimer
+
+        }
+
         #endregion
 
         #region Helper

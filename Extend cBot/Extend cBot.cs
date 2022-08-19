@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.075";
+        public const string VERSION = "1.076";
 
         #endregion
 
@@ -55,6 +55,9 @@ namespace cAlgo.Robots
         #endregion
 
         #region Strategy
+
+        [Parameter("Loop Mode", Group = "Strategy", DefaultValue = Extensions.LoopMode.OnTick)]
+        public Extensions.LoopMode MyLoopMode { get; set; }
 
         [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = Extensions.OpenTradeType.Buy)]
         public Extensions.OpenTradeType MyOpenTradeType { get; set; }
@@ -248,7 +251,7 @@ namespace cAlgo.Robots
 
         public void StrategyRun()
         {
-
+            
             bool UsingRecovery = UseDM && DMMultiplier > 0 && ConsecutiveLoss > 0;
             bool SharedConditions = !IAmInPause && !UsingRecovery && !OpenedInThisBar && StrategyPositions.Length < MaxTrades && Bars.LastGAP(Symbol.Digits) <= Symbol.PipsToDigits(GAP) && Symbol.RealSpread() <= SpreadToTrigger;
 
@@ -311,6 +314,8 @@ namespace cAlgo.Robots
             Positions.Closed += OnClosePositions;
 
             StrategyInitialize();
+
+            if (MyLoopMode == Extensions.LoopMode.OnTimer) Timer.Start(1);
 
         }
 
@@ -409,7 +414,7 @@ namespace cAlgo.Robots
 
             }
 
-            StrategyRun();
+            if(MyLoopMode == Extensions.LoopMode.OnTick) StrategyRun();
 
         }
 
@@ -417,6 +422,17 @@ namespace cAlgo.Robots
         {
 
             OpenedInThisBar = false;
+
+            if (MyLoopMode == Extensions.LoopMode.OnBar) StrategyRun();
+
+        }
+
+        protected override void OnTimer()
+        {
+
+            base.OnTimer();
+
+            StrategyRun();
 
         }
 
