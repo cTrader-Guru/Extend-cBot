@@ -4,7 +4,7 @@ using cAlgo.API.Indicators;
 namespace cAlgo.Robots
 {
 
-    public class Strategy : Robot
+    public class Strategy : License
     {
 
         #region Property

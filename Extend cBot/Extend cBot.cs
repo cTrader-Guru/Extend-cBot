@@ -27,7 +27,7 @@ using cAlgo.API.Internals;
 namespace cAlgo.Robots
 {
 
-    [Robot(TimeZone = TimeZones.UTC, AccessRights = AccessRights.None)]
+    [Robot(TimeZone = TimeZones.UTC, AccessRights = AccessRights.FullAccess)]
     public class ExtendcBot : Strategy
     {
 
@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.076";
+        public const string VERSION = "1.077";
 
         #endregion
 
@@ -321,6 +321,10 @@ namespace cAlgo.Robots
 
         protected override void OnTick()
         {
+
+            // --> REQUIRE LICENSE GENERATOR 1.073 OR GREATER https://github.com/cTrader-Guru/License-Generator
+            // --> REQUIRED : AccessRights.FullAccess
+            // --> CheckLicense(NAME);
 
             bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
