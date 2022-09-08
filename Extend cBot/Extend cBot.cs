@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.077";
+        public const string VERSION = "1.078";
 
         #endregion
 
@@ -274,7 +274,7 @@ namespace cAlgo.Robots
             {
 
                 bool HaveAskDistance = upperTrade > 0 && Math.Abs(Math.Round(Ask - upperTrade, Symbol.Digits)) >= DistanceMin;
-                HaveAskDistance = HaveAskDistance && Math.Abs(Math.Round(Ask - lowerTrade, Symbol.Digits)) >= DistanceMin;
+                HaveAskDistance = HaveAskDistance && lowerTrade > 0 && Math.Abs(Math.Round(Ask - lowerTrade, Symbol.Digits)) >= DistanceMin;
                 HaveAskDistance = StrategyPositions.Length == 0 || MinDistanceTrades == 0 || HaveAskDistance;
 
                 if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Sell && HaveAskDistance)
@@ -289,8 +289,8 @@ namespace cAlgo.Robots
             else if (Sell)
             {
 
-                bool HaveBidDistance = lowerTrade > 0 && Math.Abs(Math.Round(Bid - upperTrade, Symbol.Digits)) >= DistanceMin;
-                HaveBidDistance = HaveBidDistance && Math.Abs(Math.Round(Bid - lowerTrade, Symbol.Digits)) >= DistanceMin;
+                bool HaveBidDistance = upperTrade > 0 && Math.Abs(Math.Round(Bid - upperTrade, Symbol.Digits)) >= DistanceMin;
+                HaveBidDistance = HaveBidDistance && lowerTrade > 0 && Math.Abs(Math.Round(Bid - lowerTrade, Symbol.Digits)) >= DistanceMin;
                 HaveBidDistance = StrategyPositions.Length == 0 || MinDistanceTrades == 0 || HaveBidDistance;
 
                 if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Buy && HaveBidDistance)
