@@ -253,7 +253,7 @@ namespace cAlgo
         public static double DigitsToPips(this Symbol thisSymbol, double Pips)
         {
 
-            return Math.Round(Pips / thisSymbol.PipSize, 2);
+            return Math.Round(Pips / thisSymbol.PipSize, 1);
 
         }
 

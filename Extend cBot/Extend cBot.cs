@@ -35,7 +35,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.079";
+        public const string VERSION = "1.080";
 
         #endregion
 
