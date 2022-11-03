@@ -20,9 +20,12 @@
 
 
 using System;
+
 using cAlgo.API;
 using cAlgo.API.Internals;
 
+using cTrader.Guru.Helper;
+using cTrader.Guru.Extensions;
 
 namespace cAlgo.Robots
 {
@@ -35,7 +38,29 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.080";
+        public const string VERSION = "1.081";
+
+        #endregion
+
+        #region Enum
+
+        public enum OpenTradeType
+        {
+
+            All,
+            Buy,
+            Sell
+
+        }
+
+        public enum LoopMode
+        {
+
+            OnTick,
+            OnBar,
+            OnTimer
+
+        }
 
         #endregion
 
@@ -56,11 +81,11 @@ namespace cAlgo.Robots
 
         #region Strategy
 
-        [Parameter("Loop Mode", Group = "Strategy", DefaultValue = Extensions.LoopMode.OnTick)]
-        public Extensions.LoopMode MyLoopMode { get; set; }
+        [Parameter("Loop Mode", Group = "Strategy", DefaultValue = LoopMode.OnTick)]
+        public LoopMode MyLoopMode { get; set; }
 
-        [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = Extensions.OpenTradeType.Buy)]
-        public Extensions.OpenTradeType MyOpenTradeType { get; set; }
+        [Parameter("Open Trade Type", Group = "Strategy", DefaultValue = OpenTradeType.Buy)]
+        public OpenTradeType MyOpenTradeType { get; set; }
 
         [Parameter("Stop Loss", Group = "Strategy", DefaultValue = 30, MinValue = 0, Step = 0.1)]
         public double StopLoss { get; set; }
@@ -162,8 +187,8 @@ namespace cAlgo.Robots
         [Parameter("Fixed Lots (bypass all Capital)", Group = "Money Management", DefaultValue = 0, MinValue = 0, Step = 0.01)]
         public double FixedLots { get; set; }
 
-        [Parameter("Capital", Group = "Money Management", DefaultValue = Extensions.CapitalTo.Balance)]
-        public Extensions.CapitalTo MyCapital { get; set; }
+        [Parameter("Capital", Group = "Money Management", DefaultValue = MonenyManagement.CapitalTo.Balance)]
+        public MonenyManagement.CapitalTo MyCapital { get; set; }
 
         [Parameter("% Risk", Group = "Money Management", DefaultValue = 1, MinValue = 0.1, Step = 0.1)]
         public double MyRisk { get; set; }
@@ -231,7 +256,7 @@ namespace cAlgo.Robots
 
         public Position[] StrategyPositions = Array.Empty<Position>();
 
-        Extensions.MonenyManagement MonenyManagement1;
+        MonenyManagement MonenyManagement1;
 
         public int ConsecutiveLoss = 0;
 
@@ -263,7 +288,7 @@ namespace cAlgo.Robots
 
             }
 
-            MonenyManagement1 = new Extensions.MonenyManagement(Account, MyCapital, MyRisk, FixedLots, FakeSL > 0 ? FakeSL : StopLoss, Symbol);
+            MonenyManagement1 = new MonenyManagement(Account, MyCapital, MyRisk, FixedLots, FakeSL > 0 ? FakeSL : StopLoss, Symbol);
             double lotSize = MonenyManagement1.GetLotSize();
 
             double volumeInUnits = Symbol.QuantityToVolumeInUnits(lotSize);
@@ -271,7 +296,7 @@ namespace cAlgo.Robots
             if (Buy)
             {
 
-                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Sell && HaveAskDistance)
+                if (SharedConditions && MyOpenTradeType != OpenTradeType.Sell && HaveAskDistance)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Buy, SymbolName, volumeInUnits, 2, Ask, MyLabel, StopLoss, TakeProfit);
@@ -283,7 +308,7 @@ namespace cAlgo.Robots
             else if (Sell)
             {
 
-                if (SharedConditions && MyOpenTradeType != Extensions.OpenTradeType.Buy && HaveBidDistance)
+                if (SharedConditions && MyOpenTradeType != OpenTradeType.Buy && HaveBidDistance)
                 {
 
                     ExecuteMarketRangeOrder(TradeType.Sell, SymbolName, volumeInUnits, 2, Bid, MyLabel, StopLoss, TakeProfit);
@@ -297,7 +322,7 @@ namespace cAlgo.Robots
 
         protected override void OnStart()
         {
-
+            
             Print(NAME, " ", VERSION);
 
             Positions.Opened += OnOpenPositions;
@@ -305,7 +330,7 @@ namespace cAlgo.Robots
 
             StrategyInitialize();
 
-            if (MyLoopMode == Extensions.LoopMode.OnTimer) Timer.Start(1);
+            if (MyLoopMode == LoopMode.OnTimer) Timer.Start(1);
 
         }
 
@@ -420,7 +445,7 @@ namespace cAlgo.Robots
 
             }
 
-            if(MyLoopMode == Extensions.LoopMode.OnTick) StrategyRun();
+            if(MyLoopMode == LoopMode.OnTick) StrategyRun();
 
         }
 
@@ -429,7 +454,7 @@ namespace cAlgo.Robots
 
             OpenedInThisBar = false;
 
-            if (MyLoopMode == Extensions.LoopMode.OnBar) StrategyRun();
+            if (MyLoopMode == LoopMode.OnBar) StrategyRun();
 
         }
 
