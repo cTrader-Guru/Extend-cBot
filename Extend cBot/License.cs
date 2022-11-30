@@ -101,39 +101,42 @@ namespace cAlgo.Robots
 
                 }
 
-                if (Info.AllowBackTest)
+                if (RunningMode != RunningMode.RealTime)
                 {
 
-                    return;
+                    if (!Info.AllowBackTest)
+                    {
+
+                        Exit("This license does not provide for backtesting");
+                        return;
+
+                    }
 
                 }
-                else if (RunningMode != RunningMode.RealTime)
+                else
                 {
 
-                    Exit("This license does not provide for backtesting");
-                    return;
+                    if (Info.UserID != Account.UserId)
+                    {
 
-                }
+                        Exit(string.Format("License not for this UserID ({0})", Account.UserId));
+                        return;
 
-                if (Info.UserID != Account.UserId)
-                {
+                    }
+                    else if (Info.Product.ToUpper().CompareTo(cBotName.ToUpper()) != 0)
+                    {
 
-                    Exit(string.Format("License not for this UserID ({0})", Account.UserId));
-                    return;
+                        Exit(string.Format("License not for this product '{0}'", cBotName));
+                        return;
 
-                }
-                else if (Info.Product.ToUpper().CompareTo(cBotName.ToUpper()) != 0)
-                {
+                    }
+                    else if (Info.Expire.CompareTo("*") != 0 && Server.Time > Convert.ToDateTime(Info.Expire))
+                    {
 
-                    Exit(string.Format("License not for this product '{0}'", cBotName));
-                    return;
+                        Exit(string.Format("License Expired for {0}", cBotName));
+                        return;
 
-                }
-                else if (Info.Expire.CompareTo("*") != 0 && Server.Time > Convert.ToDateTime(Info.Expire))
-                {
-
-                    Exit(string.Format("License Expired for {0}", cBotName));
-                    return;
+                    }
 
                 }
 

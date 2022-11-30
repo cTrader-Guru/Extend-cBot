@@ -38,7 +38,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.081";
+        public const string VERSION = "1.082";
 
         #endregion
 
@@ -340,7 +340,7 @@ namespace cAlgo.Robots
             // --> REQUIRE LICENSE GENERATOR 1.073 OR GREATER https://github.com/cTrader-Guru/License-Generator
             // --> REQUIRED : AccessRights.FullAccess
             // --> CheckLicense(NAME);
-
+            
             bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
             double DDControl = Math.Round((Account.Balance / 100) * DDPercentage, 2) * -1;
