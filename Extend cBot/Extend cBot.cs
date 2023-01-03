@@ -38,7 +38,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.082";
+        public const string VERSION = "1.083";
 
         #endregion
 
@@ -122,6 +122,9 @@ namespace cAlgo.Robots
         [Parameter("To (8.20 = 08:20)", Group = "Pause", DefaultValue = 0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
         public double PauseTo { get; set; }
 
+        [Parameter("Close All From (zero = disabled)", Group = "Pause", DefaultValue = 0, MinValue = 0, MaxValue = 23.59, Step = 0.01)]
+        public double OverClockFrom { get; set; }
+
         public bool IAmInPause
         {
 
@@ -141,6 +144,21 @@ namespace cAlgo.Robots
             }
         }
 
+        public bool IAmInOverClock
+        {
+
+            get
+            {
+
+                if (OverClockFrom == 0)
+                    return false;
+
+                double now = Server.Time.ToDouble();
+
+                return now >= OverClockFrom;
+
+            }
+        }
 
         #endregion
 
@@ -365,7 +383,7 @@ namespace cAlgo.Robots
                 {
 
                     bool OnTriggerClose = CloseOnTrigger && ((Buy && position.TradeType == TradeType.Sell) || (Sell && position.TradeType == TradeType.Buy));
-                    if (OnTriggerClose || OnMoneyTargetClose || OnDrawDownClose)
+                    if (OnTriggerClose || OnMoneyTargetClose || OnDrawDownClose || IAmInOverClock)
                     {
 
                         position.Close();
