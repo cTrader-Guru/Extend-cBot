@@ -63,9 +63,10 @@ namespace cAlgo.Robots
                 if (Info == null)
                 {
 
-                    Print($"Loading license for {Account.UserId}...");
+                    Print($"Loading license for {Account.UserId}");
 
                     string HashName = GetMD5(cBotName.ToUpper() + Account.UserId);
+                    string HashNameUniversal = GetMD5(cBotName.ToUpper() + "0");
 
                     string LocalLicense;
 
@@ -78,7 +79,18 @@ namespace cAlgo.Robots
                     catch
                     {
 
-                        throw new Exception("Problems on load license");
+                        try
+                        {
+
+                            LocalLicense = LoadSecureFile(string.Format(LocalFileName, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), HashNameUniversal));
+
+                        }
+                        catch
+                        {
+
+                            throw new Exception("Problems on load license");
+
+                        }
 
                     }
 
@@ -116,7 +128,7 @@ namespace cAlgo.Robots
                 else
                 {
 
-                    if (Info.UserID != Account.UserId)
+                    if (Info.UserID != Account.UserId && Info.UserID != 0)
                     {
 
                         Exit(string.Format("License not for this UserID ({0})", Account.UserId));

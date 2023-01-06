@@ -38,7 +38,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.083";
+        public const string VERSION = "1.084";
 
         #endregion
 
@@ -355,7 +355,7 @@ namespace cAlgo.Robots
         protected override void OnTick()
         {
 
-            // --> REQUIRE LICENSE GENERATOR 1.073 OR GREATER https://github.com/cTrader-Guru/License-Generator
+            // --> REQUIRE LICENSE GENERATOR 1.075 OR GREATER https://github.com/cTrader-Guru/License-Generator
             // --> REQUIRED : AccessRights.FullAccess
             // --> CheckLicense(NAME);
             
