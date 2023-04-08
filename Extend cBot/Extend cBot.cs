@@ -20,12 +20,13 @@
 
 
 using System;
-
 using cAlgo.API;
 using cAlgo.API.Internals;
 
 using cTrader.Guru.Helper;
 using cTrader.Guru.Extensions;
+using cAlgo.Guru.Helper;
+using System.Collections.Generic;
 
 namespace cAlgo.Robots
 {
@@ -38,7 +39,7 @@ namespace cAlgo.Robots
 
         public const string NAME = "Extend cBot";
 
-        public const string VERSION = "1.084";
+        public const string VERSION = "1.085";
 
         #endregion
 
@@ -264,6 +265,25 @@ namespace cAlgo.Robots
 
         #endregion
 
+        #region Telegram
+
+        [Parameter("Enabled?", Group = "Telegram", DefaultValue = false)]
+        public bool TelegramEnabled { get; set; }
+
+        [Parameter("API Token", Group = "Telegram", DefaultValue = "")]
+        public string TelegramToken { get; set; }
+
+        [Parameter("Chat IDs (separate by comma)", Group = "Telegram", DefaultValue = "")]
+        public string TelegramChatIDs { get; set; }
+
+        [Parameter("Send on Open", Group = "Telegram", DefaultValue = true)]
+        public bool TelegramOnOpen { get; set; }
+
+        [Parameter("Send on Close", Group = "Telegram", DefaultValue = true)]
+        public bool TelegramOnClose { get; set; }
+
+        #endregion
+
         #endregion
 
         #region Property
@@ -280,6 +300,8 @@ namespace cAlgo.Robots
 
         public DateTime PreventGlitch;
 
+        public Telegram TM;
+
         #endregion
 
         #region cBot Events
@@ -294,7 +316,7 @@ namespace cAlgo.Robots
 
         public void StrategyRun()
         {
-            
+
             bool UsingRecovery = UseDM && DMMultiplier > 0 && ConsecutiveLoss > 0;
             bool SharedConditions = !IAmInPause && !UsingRecovery && !OpenedInThisBar && StrategyPositions.Length < MaxTrades && Bars.LastGAP(Symbol.Digits) <= Symbol.PipsToDigits(GAP) && Symbol.RealSpread() <= SpreadToTrigger;
 
@@ -340,11 +362,25 @@ namespace cAlgo.Robots
 
         protected override void OnStart()
         {
-            
+
             Print(NAME, " ", VERSION);
+
+            try
+            {
+                if(TelegramEnabled)TM = new Telegram(TelegramToken, TelegramChatIDs);
+            }
+            catch (Exception ex)
+            {
+                Print(ex.Message);
+                Stop();
+                return;
+            }
 
             Positions.Opened += OnOpenPositions;
             Positions.Closed += OnClosePositions;
+
+            TelegramChatIDs = TelegramChatIDs.Trim();
+            TelegramToken = TelegramToken.Trim();             
 
             StrategyInitialize();
 
@@ -358,7 +394,7 @@ namespace cAlgo.Robots
             // --> REQUIRE LICENSE GENERATOR 1.075 OR GREATER https://github.com/cTrader-Guru/License-Generator
             // --> REQUIRED : AccessRights.FullAccess
             // --> CheckLicense(NAME);
-            
+
             bool OnMoneyTargetClose = MoneyTargetPercentage > 0 && StrategyPositions.Length >= MoneyTargetTrades && StrategyNetProfit >= MoneyTarget;
 
             double DDControl = Math.Round((Account.Balance / 100) * DDPercentage, 2) * -1;
@@ -463,7 +499,7 @@ namespace cAlgo.Robots
 
             }
 
-            if(MyLoopMode == LoopMode.OnTick) StrategyRun();
+            if (MyLoopMode == LoopMode.OnTick) StrategyRun();
 
         }
 
@@ -495,6 +531,19 @@ namespace cAlgo.Robots
         #endregion
 
         #region Methods
+
+        private void ToTelegram(string message, bool printError = true)
+        {
+
+            bool canSend = RunningMode == RunningMode.RealTime || RunningMode == RunningMode.VisualBacktesting;
+            if (!TelegramEnabled || !canSend || TM == null) return;
+
+            List<string> unsended = TM.SendMessage(message);
+            if (printError && unsended.Count > 0) Print("Telegram notification was not received by these Chat_IDs: ", string.Join(",", unsended));
+
+
+        }
+
         private void OnOpenPositions(PositionOpenedEventArgs eventArgs)
         {
 
@@ -502,9 +551,12 @@ namespace cAlgo.Robots
             if (position.SymbolName != SymbolName || position.Label != MyLabel)
                 return;
 
+            if (TelegramOnOpen) ToTelegram(string.Format("{0}: Opened a {1} position {2}", position.SymbolName, position.TradeType, position.Id));
+
             OpenedInThisBar = true;
 
         }
+        
         private void OnClosePositions(PositionClosedEventArgs eventArgs)
         {
 
@@ -554,6 +606,8 @@ namespace cAlgo.Robots
                 ConsecutiveLoss = 0;
 
             }
+
+            if (TelegramOnClose) ToTelegram(string.Format("{0}: Closed a {1} position {2}, NetProfit {3:00}", position.SymbolName, position.TradeType, position.Id, position.NetProfit));
 
         }
 
